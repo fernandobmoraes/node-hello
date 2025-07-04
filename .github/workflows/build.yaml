@@ -20,4 +20,40 @@ jobs:
       uses: SonarSource/sonarqube-scan-action@v5.2.0 # Ex: v4.1.0, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secret.SONAR_HOST_URL }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        
+  # Start building the image
+  build_container_trivy_scan_and_publish:
+    runs-on: ubuntu-latest
+    needs: sonarqube
+    steps: 
+    # Check out from the runners vm
+    - uses: actions/checkout@v4
+
+    - name: Building container image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/node-hello:${{ github.sha }} .
+    
+    # Start the trivy scan
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: 'docker.io/${{ secrets.DOCKERHUB_USERNAME }}/node-hello:${{ github.sha }}'
+        format: 'table'
+        exit-code: '1' # Set exit code to 0 to succeed regardless and just be informative even if it finds vulnerabliite
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+
+    # Login to Docker Hub
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    # Publish image on Docker Hub
+    - name: Publish Image on Docker Hub
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/node-hello:${{ github.sha }}
+
+
+  
