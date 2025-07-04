@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 
 # Installl dependencies
-RUN npm install
+RUN npm install --ignore-scripts
 
 # Copy rest of source code to here
 COPY index.js ./
