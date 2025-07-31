@@ -14,7 +14,7 @@ COPY package.json package-lock.json ./
 RUN npm install --ignore-scripts
 
 # Copy rest of source code to here
-COPY . .
+COPY index.js ./
 
 # Change it to nonroot user
 USER nonroot
